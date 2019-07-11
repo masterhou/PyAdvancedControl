@@ -13,11 +13,11 @@ import time
 
 dt = 0.1  # [s] discrete time
 lr = 1.0  # [m]
-T = 15  # number of horizon
+T = 10  # number of horizon
 target = [5.0, -1.0]  # [x,y]
 
-max_speed = 5.0
-min_speed = -5.0
+max_speed = 15.0
+min_speed = -15.0
 
 
 def LinealizeCarModel(xb, u, dt, lr):
@@ -80,22 +80,26 @@ def CalcInput(A, B, C, x, u):
 
     # MPC controller
     states = []
+    cost = 0.0
+    constr = []
     for t in range(T):
-        constr = [x[:, t + 1] == A * x[:, t] + B * u[:, t] + C]
+        constr += [x[:, t + 1] == A * x[:, t] + B * u[:, t] + C[:, 0]]
         constr += [abs(u[:, t]) <= 0.5]
         constr += [x[2, t + 1] <= max_speed]
         constr += [x[2, t + 1] >= min_speed]
         #  cost = sum_squares(u[:,t])
-        cost = sum_squares(abs(x[0, t] - target[0])) * 10.0 * t
+        cost += sum_squares(abs(x[0, t] - target[0])) * 10.0 * t
         cost += sum_squares(abs(x[1, t] - target[1])) * 10.0 * t
         if t == T - 1:
             cost += (x[0, t + 1] - target[0]) ** 2 * 10000.0
             cost += (x[1, t + 1] - target[1]) ** 2 * 10000.0
 
-        states.append(Problem(Minimize(cost), constr))
+        # states.append(Problem(Minimize(cost), constr))
 
-    prob = sum(states)
-    prob.constraints += [x[:, 0] == x_0, x[2, T] == 0.0]
+    # prob = sum(states)
+    # prob.constraints += [x[:, 0] == x_0[:,0], x[2, T] == 0.0]
+    constr += [x[:, 0] == x_0[:,0], x[2, T] == 0.0]
+    prob = Problem(Minimize(cost), constr)
 
     start = time.time()
     #  result=prob.solve(verbose=True)
@@ -130,12 +134,12 @@ def Main():
 
         u[0, 0] = GetListFromMatrix(ustar.value[0, :])[0]
         u[1, 0] = float(ustar[1, 0].value)
-
+        # print(A, B, x, u)
         x = A @ x + B @ u
 
         plt.subplot(3, 1, 1)
-        plt.plot(target[0], target[1], 'xb')
-        plt.plot(x[0], x[1], '.r')
+        plt.plot(target[0], target[1], 'xb') # target
+        plt.plot(x[0], x[1], '.r')  # car position
         plt.plot(GetListFromMatrix(xstar.value[0, :]), GetListFromMatrix(
             xstar.value[1, :]), '-b')
         plt.axis("equal")
@@ -160,14 +164,14 @@ def Main():
         plt.legend()
         plt.grid(True)
 
-        #  plt.pause(0.0001)
+        plt.pause(0.0001)
 
         #  raw_input()
 
         # check goal
         dis = np.linalg.norm([x[0] - target[0], x[1] - target[1]])
         if (dis < 0.1):
-            print("Goal")
+            print("Goal", i)
             break
 
     plt.show()

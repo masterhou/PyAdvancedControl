@@ -58,7 +58,7 @@ def use_modeling_tool(A, B, N, Q, R, P, x0, umax=None, umin=None, xmin=None, xma
 
     prob = cvxpy.Problem(cvxpy.Minimize(costlist), constrlist)
 
-    prob.solve(verbose=True)
+    prob.solve(verbose=False)
 
     return x.value, u.value
 
@@ -150,8 +150,8 @@ def opt_mpc_with_state_constr(A, B, N, Q, R, P, x0, xmin=None, xmax=None, umax=N
         G, h = generate_inequalities_constraints_mat(
             N, nx, nu, xmin, xmax, umin, umax)
 
-        print(h)
-        print(G)
+        # print(h)
+        # print(G)
 
         sol = pyecosqp.ecosqp(H, q, A=G, B=h, Aeq=Ae, Beq=be)
 
@@ -173,7 +173,7 @@ def test3():
     B = np.array([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
-    N = 10  # number of horizon
+    N = 50  # number of horizon
     Q = np.eye(nx)
     R = np.eye(nu)
     P = np.eye(nx)
@@ -181,7 +181,9 @@ def test3():
     umin = -0.7
 
     x0 = np.array([[1.0], [2.0]])  # init state
+    start = time.time()
     x, u = use_modeling_tool(A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    print("calc time:{0} [sec]".format(time.time() - start))
 
     rx1 = np.array(x[0, :]).flatten()
     rx2 = np.array(x[1, :]).flatten()
@@ -194,9 +196,10 @@ def test3():
         plt.plot(ru, label="u")
         plt.legend()
         plt.grid(True)
-
+    start = time.time()
     x, u = opt_mpc_with_state_constr(
         A, B, N, Q, R, P, x0, umax=umax, umin=umin)
+    print("calc time:{0} [sec]".format(time.time() - start))
     x1 = np.array(x[0, :]).flatten()
     x2 = np.array(x[1, :]).flatten()
     u = np.array(u).flatten()

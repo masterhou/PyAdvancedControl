@@ -254,12 +254,12 @@ def test2():
     B = np.matrix([[-1.0], [2.0]])
     (nx, nu) = B.shape
 
-    N = 5  # number of horizon
+    N = 15  # number of horizon
     Q = np.diag([1.0, 1.0])
     R = np.eye(nu)
 
     x0 = np.matrix([2.0, 1.0]).T
-    u0 = np.matrix([0.1])
+    u0 = np.matrix([0.21])
 
     T = np.matrix([1.0, 0.25] * N).T
     #  print(T)

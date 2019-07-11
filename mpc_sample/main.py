@@ -25,18 +25,22 @@ A = np.eye(n) + alpha * np.random.randn(n, n)
 B = np.random.randn(n, m)
 x_0 = beta * np.random.randn(n, 1)
 
-x = Variable(n, T + 1)
-u = Variable(m, T)
+x = Variable((n, T + 1))
+u = Variable((m, T))
 
-states = []
+# states = []
+cost = 0.0
+constr=[]
 for t in range(T):
-    cost = sum_squares(x[:, t + 1]) + sum_squares(u[:, t])
-    constr = [x[:, t + 1] == A * x[:, t] + B * u[:, t],
+    cost += sum_squares(x[:, t + 1]) + sum_squares(u[:, t])
+    constr += [x[:, t + 1] == A * x[:, t] + B * u[:, t],
               norm(u[:, t], 'inf') <= 1]
-    states.append(Problem(Minimize(cost), constr))
+    # states.append(Problem(Minimize(cost), constr))
 # sums problem objectives and concatenates constraints.
-prob = sum(states)
-prob.constraints += [x[:, T] == 0, x[:, 0] == x_0]
+# prob = sum(states)
+# prob.constraints += [x[:, T] == 0, x[:, 0] == x_0]
+constr += [x[:, T] == 0, x[:, 0] == x_0[:, 0]]
+prob = Problem(Minimize(cost), constr)
 
 start = time.time()
 result = prob.solve(verbose=True)
